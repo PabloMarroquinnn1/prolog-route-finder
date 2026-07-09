@@ -1,0 +1,215 @@
+# Manual de Usuario — RutaGT
+
+**Autor:** Pablo Alejandro Marroquin Cutz
+
+---
+
+## Que es RutaGT?
+
+RutaGT es un sistema web disenado para una empresa de transporte interdepartamental de Guatemala. Permite determinar la ruta mas corta entre distintas ciudades conectadas por carreteras, calcular distancias totales y visualizar todas las rutas posibles entre dos puntos.
+
+El sistema utiliza Prolog (SWI-Prolog) como motor de inferencia logica para representar el conocimiento geografico y realizar la busqueda de rutas, mientras que Python con FastAPI actua como backend que conecta la logica de Prolog con la interfaz web del usuario.
+
+---
+
+## Requisitos del Sistema
+
+| Componente        | Version minima                        |
+|-------------------|---------------------------------------|
+| Python            | 3.11 o superior                       |
+| SWI-Prolog        | 10.0 o superior                       |
+| Git               | Cualquier version reciente            |
+| Navegador web     | Chrome, Firefox, Edge actualizados    |
+| Sistema operativo | Windows 10/11, Linux, macOS           |
+
+---
+
+## Instalacion
+
+### Paso 1 — Instalar SWI-Prolog
+
+Descarga SWI-Prolog desde la pagina oficial:
+
+```
+https://www.swi-prolog.org/download/stable
+```
+
+Durante la instalacion en Windows, marca la opcion "Add SWI-Prolog to PATH" para que sea accesible desde la terminal. Verifica la instalacion abriendo una terminal y escribiendo:
+
+```bash
+swipl --version
+```
+
+Deberia mostrar algo como: `SWI-Prolog version 10.0.2 for x64-win64`
+
+### Paso 2 — Clonar el repositorio
+
+```bash
+git clone https://github.com/tu-usuario/[IA1]_VACASJUN2026_PabloMarroquin_202200214
+cd [IA1]_VACASJUN2026_PabloMarroquin_202200214
+```
+
+### Paso 3 — Crear y activar el entorno virtual
+
+```bash
+python -m venv .venv
+```
+
+En Windows (PowerShell):
+```bash
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.venv\Scripts\Activate.ps1
+```
+
+En Linux/macOS:
+```bash
+source .venv/bin/activate
+```
+
+### Paso 4 — Instalar dependencias
+
+```bash
+pip install fastapi uvicorn pyswip
+```
+
+### Paso 5 — Iniciar el servidor
+
+```bash
+uvicorn main:app --reload
+```
+
+Cuando el servidor este listo veras en la terminal:
+
+```
+INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Application startup complete.
+```
+
+### Paso 6 — Abrir en el navegador
+
+```
+http://127.0.0.1:8000
+```
+
+---
+
+## Interfaz del Sistema
+
+La interfaz esta dividida en cinco secciones:
+
+**Buscar Ruta**
+Panel izquierdo donde seleccionas la ciudad de origen y destino para calcular las rutas.
+
+**Ciudades**
+Panel derecho que muestra todas las ciudades actualmente registradas en la base de conocimiento de Prolog.
+
+**Resultados**
+Aparece debajo al calcular rutas. Si existe ruta, muestra la ruta optima destacada en negro y dorado y el listado completo ordenado por distancia. Si no existe ruta, muestra un mensaje indicando que no hay conexion entre las ciudades seleccionadas.
+
+**Administracion**
+Panel inferior con dos pestanas para agregar nuevas ciudades y conexiones al sistema.
+
+**Barra de estadisticas**
+En la parte inferior muestra el total de ciudades registradas, rutas encontradas en la ultima busqueda, y la menor y mayor distancia encontrada.
+
+---
+
+## Como Usar el Sistema
+
+### Buscar rutas entre dos ciudades
+
+1. En la seccion Buscar ruta, despliega el selector Ciudad de Origen y elige una ciudad
+2. Despliega el selector Ciudad de Destino y elige otra ciudad distinta
+3. Presiona el boton Calcular rutas
+4. Espera unos segundos mientras Prolog calcula las rutas
+5. El sistema mostrara:
+   - Ruta optima: destacada en negro con la distancia total y el recorrido ciudad por ciudad
+   - Todas las rutas posibles: listadas y numeradas de menor a mayor distancia
+   - Si no hay ruta: mensaje indicando que no existe conexion entre esas ciudades
+
+Ejemplo buscando de Guatemala a Jutiapa:
+- Ruta optima: Guatemala - Jalapa - Jutiapa (179 km)
+- Ruta alternativa: Guatemala - Zacapa - Chiquimula - Jutiapa (318 km)
+
+Para limpiar los resultados presiona el boton Limpiar en la esquina superior derecha del panel de resultados.
+
+---
+
+### Agregar una ciudad nueva
+
+1. Ve a la seccion Administracion al final de la pagina
+2. Asegurate de estar en la pestana Ciudad
+3. Escribe el nombre de la ciudad en el campo de texto
+4. Presiona el boton Agregar ciudad
+5. Aparecera un mensaje de confirmacion verde si se agrego correctamente, o un mensaje rojo si hubo algun error
+
+El sistema normaliza automaticamente la entrada antes de validar:
+- Elimina espacios al inicio y al final
+- Convierte todo a minusculas
+- Elimina espacios internos
+
+Reglas para el nombre de la ciudad:
+
+| Ejemplo       | Valido | Razon                          |
+|---------------|--------|--------------------------------|
+| chimaltenango | Si     | Solo letras minusculas         |
+| puertobarrios | Si     | Todo junto sin espacios        |
+| GUATEMALA     | Si     | Se convierte automaticamente a minusculas |
+| Monte Rico    | Si     | Se convierte a monterrico automaticamente |
+| mexico        | No     | Contiene tilde si se escribe con acento |
+| san2marcos    | No     | Contiene numero                |
+
+La ciudad nueva aparecera en los selectores pero no tendra conexiones hasta que las agregues desde la pestana Conexion.
+
+---
+
+### Agregar una conexion entre ciudades
+
+1. Ve a la seccion Administracion
+2. Selecciona la pestana Conexion
+3. En el selector Origen elige la ciudad de partida
+4. En el selector Destino elige la ciudad de llegada
+5. En el campo Distancia (km) ingresa la distancia en kilometros (numero entero positivo)
+6. Presiona el boton Agregar conexion
+
+El sistema validara que:
+- Origen y destino sean ciudades distintas
+- La distancia sea mayor a 0
+- Ambas ciudades existan en la base de conocimiento
+- No exista ya una conexion entre esas dos ciudades
+
+Las conexiones son bidireccionales. Si agregas Guatemala hacia Escuintla con 58 km, el sistema tambien podra calcular rutas de Escuintla hacia Guatemala con la misma distancia.
+
+---
+
+## Ciudades Disponibles por Defecto
+
+| Ciudad         | Conectada con                         |
+|----------------|---------------------------------------|
+| Guatemala      | Escuintla, Jalapa, Coban, Zacapa      |
+| Escuintla      | Guatemala, Mazatenango                |
+| Mazatenango    | Escuintla, Quetzaltenango             |
+| Quetzaltenango | Mazatenango, Huehuetenango            |
+| Huehuetenango  | Quetzaltenango                        |
+| Coban          | Guatemala, Peten                      |
+| Peten          | Coban                                 |
+| Jalapa         | Guatemala, Jutiapa                    |
+| Chiquimula     | Zacapa, Jutiapa                       |
+| Zacapa         | Guatemala, Chiquimula                 |
+| Jutiapa        | Jalapa, Chiquimula                    |
+
+---
+
+## Mensajes de Error Comunes
+
+| Mensaje | Causa | Solucion |
+|---|---|---|
+| No existe ruta entre estas ciudades | No hay conexiones que unan ambas ciudades | Agrega conexiones intermedias desde Administracion |
+| Solo letras sin tildes ni caracteres especiales | Nombre con tildes o numeros | Usa solo letras a-z sin acentos |
+| La ciudad ya existe | Se intento agregar una ciudad duplicada | La ciudad ya esta registrada en el sistema |
+| Ya existe una conexion entre X y Y | Conexion duplicada | Esa ruta ya esta definida en el sistema |
+| La distancia debe ser mayor a 0 | Valor incorrecto en distancia | Ingresa un numero entero positivo |
+| La ciudad X no existe | Se referencio una ciudad no registrada | Primero agrega la ciudad desde la pestana Ciudad |
+| Error al conectar con el servidor | El servidor no esta corriendo | Ejecuta uvicorn main:app --reload en la terminal |
+
+---
