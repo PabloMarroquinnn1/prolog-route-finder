@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RutaGT — Rutas entre Ciudades</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0d0d0d;
+    --paper: #f5f0e8;
+    --gold: #c9a84c;
+    --gold-light: #e8d5a3;
+    --rust: #8b3a2a;
+    --teal: #2a6b7c;
+    --teal-light: #3d8fa3;
+    --cream: #faf7f2;
+    --border: #d4c9b0;
+    --shadow: rgba(13,13,13,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 2rem 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--gold);
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::after {
+    content: 'GT';
+    position: absolute;
+    right: -1rem;
+    top: -1rem;
+    font-family: 'Playfair Display', serif;
+    font-size: 10rem;
+    font-weight: 900;
+    color: rgba(201,168,76,0.08);
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+  }
+
+  .logo span { color: var(--gold); }
+
+  .logo-sub {
+    font-size: 0.7rem;
+    font-weight: 300;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-light);
+    margin-top: 0.2rem;
+  }
+
+  .header-badge {
+    background: var(--gold);
+    color: var(--ink);
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.4rem 1rem;
+    border-radius: 2px;
+  }
+
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--teal);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    color: var(--ink);
+  }
+
+  .card {
+    background: var(--cream);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2rem;
+    box-shadow: 4px 4px 0 var(--border);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+
+  .card:hover {
+    box-shadow: 6px 6px 0 var(--gold-light);
+    transform: translate(-1px, -1px);
+  }
+
+  .card-full { grid-column: 1 / -1; }
+
+  .form-group { margin-bottom: 1.2rem; }
+
+  label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 0.4rem;
+  }
+
+  select, input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 3px;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+
+  select:focus, input:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(42,107,124,0.1);
+  }
+
+  .select-wrapper { position: relative; }
+
+  .select-wrapper::after {
+    content: '▾';
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--teal);
+    pointer-events: none;
+    font-size: 0.8rem;
+  }
+
+  .btn {
+    padding: 0.8rem 1.8rem;
+    border: none;
+    border-radius: 3px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+    border: 2px solid var(--ink);
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 1rem;
+  }
+
+  .btn-primary:hover {
+    background: var(--teal);
+    border-color: var(--teal);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(42,107,124,0.3);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--teal);
+    border: 1.5px solid var(--teal);
+  }
+
+  .btn-secondary:hover {
+    background: var(--teal);
+    color: white;
+  }
+
+  .btn-gold {
+    background: var(--gold);
+    color: var(--ink);
+    border: 2px solid var(--gold);
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 1rem;
+    font-weight: 600;
+  }
+
+  .btn-gold:hover {
+    background: #b8973d;
+    border-color: #b8973d;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(201,168,76,0.4);
+  }
+
+  #resultado-container { grid-column: 1 / -1; display: none; }
+
+  .resultado-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+  }
+
+  .ruta-destacada {
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: 4px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    border-left: 5px solid var(--gold);
+  }
+
+  .ruta-destacada .dist-badge {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--gold);
+    white-space: nowrap;
+  }
+
+  .ruta-destacada .dist-unit {
+    font-size: 0.75rem;
+    color: var(--gold-light);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .ruta-path {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+
+  .ciudad-chip {
+    background: rgba(201,168,76,0.15);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold-light);
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+    font-size: 0.85rem;
+    text-transform: capitalize;
+    font-weight: 500;
+  }
+
+  .arrow-chip { color: var(--gold); font-size: 0.8rem; }
+
+  .rutas-grid { display: flex; flex-direction: column; gap: 0.8rem; }
+
+  .ruta-item {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: border-color 0.2s, transform 0.15s;
+    animation: slideIn 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .ruta-item:hover {
+    border-color: var(--teal);
+    transform: translateX(4px);
+  }
+
+  .ruta-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--border);
+    min-width: 2rem;
+    text-align: center;
+  }
+
+  .ruta-dist {
+    font-weight: 600;
+    color: var(--teal);
+    font-size: 1.1rem;
+    min-width: 5rem;
+  }
+
+  .ruta-dist span {
+    font-size: 0.7rem;
+    font-weight: 400;
+    color: var(--teal-light);
+    text-transform: uppercase;
+  }
+
+  .ruta-ciudades {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+    flex: 1;
+  }
+
+  .ciudad-tag {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    padding: 0.2rem 0.5rem;
+    border-radius: 2px;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+    color: var(--ink);
+  }
+
+  .arrow { color: var(--gold); font-size: 0.75rem; }
+
+  .ciudades-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .ciudad-pill {
+    background: white;
+    border: 1.5px solid var(--border);
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    text-transform: capitalize;
+    color: var(--ink);
+    cursor: default;
+    transition: all 0.2s;
+  }
+
+  .ciudad-pill:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: rgba(42,107,124,0.05);
+  }
+
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .tab {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: #999;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .msg {
+    padding: 0.8rem 1rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .msg.success { background: rgba(42,107,124,0.1); border-left: 3px solid var(--teal); color: var(--teal); }
+  .msg.error { background: rgba(139,58,42,0.1); border-left: 3px solid var(--rust); color: var(--rust); }
+
+  .loading {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--teal);
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .stats-bar {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 1rem 4rem;
+    display: flex;
+    gap: 3rem;
+    border-top: 1px solid rgba(201,168,76,0.3);
+  }
+
+  .stat { text-align: center; }
+
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gold);
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(245,240,232,0.5);
+    margin-top: 0.1rem;
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+  }
+
+  .no-route {
+    text-align: center;
+    padding: 3rem;
+    color: #999;
+  }
+
+  .no-route .icon { font-size: 3rem; margin-bottom: 1rem; }
+
+  @media (max-width: 768px) {
+    header { padding: 1.5rem; }
+    main { grid-template-columns: 1fr; padding: 1.5rem; }
+    .stats-bar { padding: 1rem 1.5rem; gap: 1.5rem; flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">Ruta<span>GT</span></div>
+    <div class="logo-sub">Sistema de rutas interdepartamentales</div>
+  </div>
+  <div class="header-badge">Guatemala</div>
+</header>
+
+<main>
+
+  <div class="card">
+    <div class="section-label">Consulta</div>
+    <div class="section-title">Buscar ruta</div>
+
+    <div class="form-group">
+      <label>Ciudad de origen</label>
+      <div class="select-wrapper">
+        <select id="origen"></select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Ciudad de destino</label>
+      <div class="select-wrapper">
+        <select id="destino"></select>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="buscarRutas()">Calcular rutas &rarr;</button>
+
+    <div class="loading" id="loading-buscar">
+      <div class="spinner"></div> Consultando Prolog...
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-label">Base de conocimiento</div>
+    <div class="section-title">Ciudades</div>
+    <p style="font-size:0.85rem; color:#777; line-height:1.6;">Ciudades actualmente registradas en el sistema Prolog.</p>
+    <div class="ciudades-grid" id="ciudades-list">
+      <div class="spinner" style="margin:1rem auto;"></div>
+    </div>
+  </div>
+
+  <div id="resultado-container" class="card card-full">
+    <div class="resultado-header">
+      <div>
+        <div class="section-label">Resultados</div>
+        <div class="section-title" id="resultado-titulo">Rutas encontradas</div>
+      </div>
+      <button class="btn btn-secondary" onclick="limpiarResultados()">Limpiar &times;</button>
+    </div>
+
+    <div id="ruta-corta-box" class="ruta-destacada" style="display:none;">
+      <div>
+        <div class="dist-unit">Ruta optima</div>
+        <div class="dist-badge" id="mejor-dist">—</div>
+        <div class="dist-unit">km totales</div>
+      </div>
+      <div>
+        <div class="dist-unit" style="margin-bottom:0.5rem;">Recorrido</div>
+        <div class="ruta-path" id="mejor-ruta"></div>
+      </div>
+    </div>
+
+    <div id="sin-ruta-box" style="display:none;">
+      <div class="no-route">
+        <div class="icon">&#128506;</div>
+        <p style="font-size:1rem; font-weight:500; margin-bottom:0.5rem;">No existe ruta entre estas ciudades</p>
+        <p style="font-size:0.85rem; color:#bbb;">Verifica que ambas ciudades tengan conexiones definidas en el sistema.</p>
+      </div>
+    </div>
+
+    <hr class="divider" id="divider-rutas" style="display:none;">
+
+    <div id="todas-rutas-header" style="display:none; margin-bottom:1rem;">
+      <div class="section-label">Todas las rutas posibles — ordenadas por distancia</div>
+    </div>
+    <div class="rutas-grid" id="todas-rutas"></div>
+  </div>
+
+  <div class="card card-full">
+    <div class="section-label">Administracion</div>
+    <div class="section-title">Agregar datos</div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('ciudad', this)">+ Ciudad</button>
+      <button class="tab" onclick="switchTab('conexion', this)">+ Conexion</button>
+    </div>
+
+    <div class="tab-content active" id="tab-ciudad">
+      <div class="form-group">
+        <label>Nombre de la ciudad</label>
+        <input type="text" id="nueva-ciudad" placeholder="ej: chimaltenango" />
+      </div>
+      <button class="btn btn-gold" onclick="agregarCiudad()">Agregar ciudad</button>
+      <div class="msg" id="msg-ciudad"></div>
+    </div>
+
+    <div class="tab-content" id="tab-conexion">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+        <div class="form-group">
+          <label>Origen</label>
+          <div class="select-wrapper">
+            <select id="con-origen"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Destino</label>
+          <div class="select-wrapper">
+            <select id="con-destino"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Distancia (km)</label>
+          <input type="number" id="con-distancia" placeholder="ej: 45" min="1" />
+        </div>
+      </div>
+      <button class="btn btn-gold" onclick="agregarConexion()">Agregar conexion</button>
+      <div class="msg" id="msg-conexion"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num" id="stat-ciudades">—</div>
+    <div class="stat-label">Ciudades</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-rutas">—</div>
+    <div class="stat-label">Rutas encontradas</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-menor">—</div>
+    <div class="stat-label">Menor distancia (km)</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num" id="stat-mayor">—</div>
+    <div class="stat-label">Mayor distancia (km)</div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://127.0.0.1:8000/api';
+  let ciudadesData = [];
+
+  async function cargarCiudades() {
+    try {
+      const res = await fetch(`${API}/ciudades`);
+      const data = await res.json();
+      ciudadesData = data.ciudades;
+      renderCiudades();
+      llenarSelects();
+      document.getElementById('stat-ciudades').textContent = ciudadesData.length;
+    } catch(e) {
+      document.getElementById('ciudades-list').innerHTML = '<span style="color:var(--rust);font-size:0.85rem;">Error al conectar con el servidor</span>';
+    }
+  }
+
+  function renderCiudades() {
+    const container = document.getElementById('ciudades-list');
+    container.innerHTML = ciudadesData.map(c =>
+      `<div class="ciudad-pill">${capitalizar(c)}</div>`
+    ).join('');
+  }
+
+  function llenarSelects() {
+    const opciones = ciudadesData.map(c => `<option value="${c}">${capitalizar(c)}</option>`).join('');
+    ['origen','destino','con-origen','con-destino'].forEach(id => {
+      document.getElementById(id).innerHTML = opciones;
+    });
+    document.getElementById('destino').selectedIndex = 1;
+    document.getElementById('con-destino').selectedIndex = 1;
+  }
+
+  function capitalizar(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  async function buscarRutas() {
+    const origen = document.getElementById('origen').value;
+    const destino = document.getElementById('destino').value;
+
+    if (origen === destino) {
+      alert('El origen y destino deben ser diferentes.');
+      return;
+    }
+
+    document.getElementById('loading-buscar').style.display = 'flex';
+    document.getElementById('resultado-container').style.display = 'none';
+
+    try {
+      const [resCorta, resTodas] = await Promise.all([
+        fetch(`${API}/ruta-corta/${origen}/${destino}`),
+        fetch(`${API}/todas-rutas/${origen}/${destino}`)
+      ]);
+
+      const corta = await resCorta.json();
+      const todas = await resTodas.json();
+
+      document.getElementById('loading-buscar').style.display = 'none';
+      document.getElementById('resultado-container').style.display = 'block';
+      document.getElementById('resultado-titulo').textContent =
+        `${capitalizar(origen)} \u2192 ${capitalizar(destino)}`;
+
+      // Ruta mas corta
+      if (corta.codigo === 200) {
+        document.getElementById('ruta-corta-box').style.display = 'flex';
+        document.getElementById('sin-ruta-box').style.display = 'none';
+        document.getElementById('divider-rutas').style.display = 'block';
+        document.getElementById('todas-rutas-header').style.display = 'block';
+        document.getElementById('mejor-dist').textContent = corta.resultado.distancia;
+        const rutaHtml = corta.resultado.ruta.map((c, i) =>
+          i < corta.resultado.ruta.length - 1
+            ? `<span class="ciudad-chip">${capitalizar(c)}</span><span class="arrow-chip">\u2192</span>`
+            : `<span class="ciudad-chip">${capitalizar(c)}</span>`
+        ).join('');
+        document.getElementById('mejor-ruta').innerHTML = rutaHtml;
+      } else {
+        document.getElementById('ruta-corta-box').style.display = 'none';
+        document.getElementById('sin-ruta-box').style.display = 'block';
+        document.getElementById('divider-rutas').style.display = 'none';
+        document.getElementById('todas-rutas-header').style.display = 'none';
+      }
+
+      // Todas las rutas
+      const container = document.getElementById('todas-rutas');
+      if (todas.codigo === 200 && todas.rutas.length > 0) {
+        const distancias = todas.rutas.map(r => r.distancia);
+        document.getElementById('stat-rutas').textContent = todas.rutas.length;
+        document.getElementById('stat-menor').textContent = Math.min(...distancias);
+        document.getElementById('stat-mayor').textContent = Math.max(...distancias);
+
+        container.innerHTML = todas.rutas.map((r, i) => {
+          const ciudadesHtml = r.ruta.map((c, j) =>
+            j < r.ruta.length - 1
+              ? `<span class="ciudad-tag">${capitalizar(c)}</span><span class="arrow">\u2192</span>`
+              : `<span class="ciudad-tag">${capitalizar(c)}</span>`
+          ).join('');
+          return `
+            <div class="ruta-item" style="animation-delay:${i * 0.05}s">
+              <div class="ruta-num">${String(i+1).padStart(2,'0')}</div>
+              <div class="ruta-dist">${r.distancia} <span>km</span></div>
+              <div class="ruta-ciudades">${ciudadesHtml}</div>
+            </div>`;
+        }).join('');
+      } else {
+        container.innerHTML = '';
+        document.getElementById('stat-rutas').textContent = '0';
+        document.getElementById('stat-menor').textContent = '—';
+        document.getElementById('stat-mayor').textContent = '—';
+      }
+
+    } catch(e) {
+      document.getElementById('loading-buscar').style.display = 'none';
+      alert('Error al consultar el servidor.');
+    }
+  }
+
+  async function agregarCiudad() {
+    const raw = document.getElementById('nueva-ciudad').value;
+    const nombre = raw.trim().toLowerCase().replace(/\s+/g, '');
+    const msg = document.getElementById('msg-ciudad');
+
+    if (!nombre) {
+      mostrarMsg(msg, 'error', 'Ingresa el nombre de la ciudad.');
+      return;
+    }
+    if (nombre.length < 3) {
+      mostrarMsg(msg, 'error', 'El nombre debe tener al menos 3 letras.');
+      return;
+    }
+    if (!/^[a-z]+$/.test(nombre)) {
+      mostrarMsg(msg, 'error', 'Solo letras, sin tildes ni caracteres especiales.');
+      return;
+    }
+    if (ciudadesData.includes(nombre)) {
+      mostrarMsg(msg, 'error', 'Esa ciudad ya existe.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/agregar-ciudad?nombre=${encodeURIComponent(nombre)}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.codigo === 200) {
+        mostrarMsg(msg, 'success', data.mensaje);
+        document.getElementById('nueva-ciudad').value = '';
+        await cargarCiudades();
+      } else {
+        mostrarMsg(msg, 'error', data.error);
+      }
+    } catch(e) {
+      mostrarMsg(msg, 'error', 'Error al conectar con el servidor.');
+    }
+  }
+
+  async function agregarConexion() {
+    const origen = document.getElementById('con-origen').value;
+    const destino = document.getElementById('con-destino').value;
+    const distancia = parseInt(document.getElementById('con-distancia').value);
+    const msg = document.getElementById('msg-conexion');
+
+    if (origen === destino) {
+      mostrarMsg(msg, 'error', 'Origen y destino deben ser diferentes.');
+      return;
+    }
+    if (!distancia || distancia <= 0) {
+      mostrarMsg(msg, 'error', 'Ingresa una distancia valida mayor a 0.');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API}/agregar-conexion?origen=${origen}&destino=${destino}&distancia=${distancia}`, { method: 'POST' });
+      const data = await res.json();
+      if (data.codigo === 200) {
+        mostrarMsg(msg, 'success', data.mensaje);
+        document.getElementById('con-distancia').value = '';
+      } else {
+        mostrarMsg(msg, 'error', data.error);
+      }
+    } catch(e) {
+      mostrarMsg(msg, 'error', 'Error al conectar con el servidor.');
+    }
+  }
+
+  function mostrarMsg(el, tipo, texto) {
+    el.className = `msg ${tipo}`;
+    el.textContent = texto;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+  }
+
+  function limpiarResultados() {
+    document.getElementById('resultado-container').style.display = 'none';
+    document.getElementById('ruta-corta-box').style.display = 'none';
+    document.getElementById('sin-ruta-box').style.display = 'none';
+    document.getElementById('divider-rutas').style.display = 'none';
+    document.getElementById('todas-rutas-header').style.display = 'none';
+    document.getElementById('todas-rutas').innerHTML = '';
+    document.getElementById('stat-rutas').textContent = '—';
+    document.getElementById('stat-menor').textContent = '—';
+    document.getElementById('stat-mayor').textContent = '—';
+  }
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById(`tab-${tab}`).classList.add('active');
+    el.classList.add('active');
+  }
+
+  cargarCiudades();
+</script>
+</body>
+</html>
