@@ -1,14 +1,6 @@
 # Manual Tecnico — RutaGT
 
-**Universidad San Carlos de Guatemala**
-**Facultad de Ingenieria — Escuela de Ciencias y Sistemas**
-**Inteligencia Artificial 1 — Seccion A**
-
-**Nombre:** Pablo Alejandro Marroquin Cutz
-
-**Carne:** 202200214
-
-**Practica:** 1 — Vacaciones del primer semestre 2026
+**Autor:** Pablo Alejandro Marroquin Cutz
 
 ---
 
